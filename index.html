@@ -1,0 +1,735 @@
+以下是您所需的“马里奥摇金币华语生字”游戏的HTML代码。它实现了答题得金币、商店道具、多人对战和排行榜等核心功能。
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>马里奥摇金币 - 华语生字大冒险</title>
+    <style>
+        * {
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #1a7f3a 0%, #0e5c2a 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', 'Press Start 2P', 'Comic Neue', 'Segoe UI', cursive, monospace;
+            padding: 20px;
+        }
+
+        /* 游戏主容器 2D卡通风格 */
+        .game-container {
+            max-width: 1400px;
+            width: 100%;
+            background: #ffde9c;
+            border-radius: 72px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.4), inset 0 1px 4px rgba(255,255,200,0.8);
+            padding: 20px 25px 30px;
+            transition: all 0.2s;
+        }
+
+        /* 头部信息 */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f3b33d;
+            padding: 12px 25px;
+            border-radius: 60px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: inset 0 -3px 0 #b4621a, 0 5px 10px rgba(0,0,0,0.2);
+        }
+
+        .coin-panel, .score-panel {
+            background: #2d1b0c;
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: #ffd966;
+            font-weight: bold;
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: inset 0 2px 3px rgba(0,0,0,0.3), 0 2px 0 #ffb347;
+        }
+
+        .coin-panel span, .score-panel span {
+            font-size: 1.9rem;
+        }
+
+        /* 马里奥舞台 */
+        .mario-stage {
+            background: #6ec8e0;
+            border-radius: 60px;
+            padding: 20px;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 4px #fbd26a, 0 10px 20px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+        }
+
+        .mario-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            position: relative;
+        }
+
+        #marioSprite {
+            font-size: 110px;
+            cursor: pointer;
+            transition: transform 0.12s ease;
+            filter: drop-shadow(5px 8px 0 rgba(0,0,0,0.2));
+            display: inline-block;
+        }
+
+        .jump {
+            transform: translateY(-40px) scale(1.05);
+        }
+
+        .question-box {
+            background: #fffef0;
+            border-radius: 50px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+            border: 4px solid #ffb347;
+            box-shadow: 0 8px 0 #b97f2e;
+        }
+
+        .question-text {
+            font-size: 2rem;
+            font-weight: bold;
+            background: #fce8b2;
+            display: inline-block;
+            padding: 12px 35px;
+            border-radius: 60px;
+            margin: 0;
+        }
+
+        .timer-bar {
+            width: 100%;
+            background: #d9b382;
+            border-radius: 50px;
+            height: 18px;
+            margin: 12px 0;
+            overflow: hidden;
+        }
+
+        .timer-fill {
+            width: 100%;
+            height: 100%;
+            background: #fdba3a;
+            border-radius: 50px;
+            transition: width 0.05s linear;
+        }
+
+        .timer-danger {
+            background: #e03a3a !important;
+            box-shadow: 0 0 8px red;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .option-btn {
+            background: #fbe6a2;
+            border: 3px solid #d48d2b;
+            border-radius: 100px;
+            padding: 14px 8px;
+            font-size: 1.25rem;
+            font-weight: bold;
+            font-family: inherit;
+            cursor: pointer;
+            transition: 0.07s linear;
+            box-shadow: 0 5px 0 #a05e15;
+            color: #3b280b;
+        }
+
+        .option-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #a05e15;
+        }
+
+        /* 按钮组 */
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 15px 0 10px;
+        }
+
+        .game-btn {
+            background: #ff914d;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-family: monospace;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 5px 0 #aa4e1c;
+            color: white;
+        }
+        .game-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #aa4e1c;}
+
+        /* 商店弹窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #fff2cf;
+            max-width: 500px;
+            width: 80%;
+            border-radius: 70px;
+            padding: 25px;
+            text-align: center;
+            border: 6px solid #ffb347;
+            animation: bounce 0.2s ease;
+        }
+        .shop-item {
+            background: #ffe6b3;
+            margin: 15px;
+            padding: 12px;
+            border-radius: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .buy-btn {
+            background: #6fbf4c;
+            border: none;
+            border-radius: 30px;
+            padding: 6px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #2d6a1f;
+        }
+        .leaderboard {
+            background: #ecbc7b;
+            border-radius: 50px;
+            padding: 12px;
+            margin-top: 20px;
+        }
+        .leader-list {
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+        .multi-status {
+            background: #ffc285;
+            border-radius: 30px;
+            padding: 8px;
+            text-align: center;
+        }
+        .toast-msg {
+            position: fixed;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #000000aa;
+            backdrop-filter: blur(4px);
+            color: gold;
+            padding: 8px 22px;
+            border-radius: 40px;
+            font-weight: bold;
+            z-index: 200;
+            pointer-events: none;
+        }
+        @keyframes bounce {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes coinExplode {
+            0% { transform: translate(0,0) rotate(0deg); opacity: 1; }
+            100% { transform: translate(var(--dx), var(--dy)) rotate(360deg); opacity: 0; }
+        }
+        .coin-particle {
+            position: absolute;
+            font-size: 28px;
+            pointer-events: none;
+            z-index: 300;
+            animation: coinExplode 0.8s forwards ease-out;
+        }
+        .flash-effect {
+            animation: flashBuy 0.3s ease-out;
+        }
+        @keyframes flashBuy {
+            0% { box-shadow: 0 0 0 0 #ffffaa; background: #ffe484; }
+            100% { box-shadow: 0 0 0 8px rgba(255,215,0,0); }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container" id="gameApp">
+    <div class="game-header">
+        <div class="coin-panel">🪙 <span id="coinCount">0</span></div>
+        <div class="score-panel">⭐ 最高分 <span id="highScoreSpan">0</span></div>
+        <div class="multi-status" id="multiStatus">👤 单人模式</div>
+    </div>
+
+    <div class="mario-stage">
+        <div class="mario-area">
+            <div id="marioSprite">👨‍🦱🧢 Mario</div>
+        </div>
+        <div class="question-box">
+            <div class="question-text" id="questionText">加载题目...</div>
+            <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+            <div id="timerText" style="font-size:1.2rem; font-weight:bold;">⏱️ 10s</div>
+            <div class="options" id="optionsContainer"></div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="game-btn" id="shopBtn">🏪 商店 (道具)</button>
+        <button class="game-btn" id="multiToggleBtn">👥 多人模式切换</button>
+        <button class="game-btn" id="nextSkipBtn">⏩ 跳过题目 (消耗道具)</button>
+    </div>
+
+    <div class="leaderboard">
+        <div>🏆 金币排行榜 🏆</div>
+        <div class="leader-list" id="leaderList">- 暂无数据 -</div>
+    </div>
+    <div style="font-size:12px; text-align:center; margin-top:8px;">✨ 答对得金币，商店买道具 ✨</div>
+</div>
+
+<!-- 商店模态框 -->
+<div id="shopModal" class="modal">
+    <div class="modal-content">
+        <h2>🍄 蘑菇商店 🍄</h2>
+        <div id="shopItemsList"></div>
+        <button class="game-btn" id="closeShopBtn" style="margin-top:12px;">关闭商店</button>
+    </div>
+</div>
+
+<script>
+    // ---------- 华文题库 (一二年级，词语+意思/拼音) ----------
+    const QUESTION_SET = [
+        { word: "开心", meaning: "快乐、愉悦", pinyin: "kāi xīn" },
+        { word: "妈妈", meaning: "母亲", pinyin: "mā ma" },
+        { word: "太阳", meaning: "提供光热的恒星", pinyin: "tài yáng" },
+        { word: "学校", meaning: "学习的地方", pinyin: "xué xiào" },
+        { word: "吃饭", meaning: "进餐", pinyin: "chī fàn" },
+        { word: "小猫", meaning: "幼小的猫", pinyin: "xiǎo māo" },
+        { word: "美丽", meaning: "好看、漂亮", pinyin: "měi lì" },
+        { word: "朋友", meaning: "交好的人", pinyin: "péng you" },
+        { word: "下雨", meaning: "雨水降落", pinyin: "xià yǔ" },
+        { word: "蓝色", meaning: "一种颜色", pinyin: "lán sè" }
+    ];
+
+    // 道具价格
+    const SHOP_ITEMS = [
+        { id: "time", name: "⏰ +5秒道具", price: 15, effect: "addTime" },
+        { id: "hint", name: "💡 提示答案", price: 20, effect: "hint" },
+        { id: "double", name: "💰 双倍得分卡 (下题)", price: 30, effect: "doubleCoin" }
+    ];
+
+    // 全局游戏状态
+    let currentCoins = 0;
+    let currentQuestionObj = null;
+    let currentOptions = [];
+    let correctAnswerText = "";
+    let timerInterval = null;
+    let timeLeft = 10;
+    let canAnswer = true;
+    let doubleActive = false;      // 双倍道具激活一次
+    let activePlayerName = "马里奥";  // 单人模式默认
+    let multiMode = false;           // 多人模式开关
+    let currentPlayers = [
+        { name: "红帽马里奥", coins: 0, active: true },
+        { name: "路易吉", coins: 0, active: false },
+        { name: "碧琪公主", coins: 0, active: false }
+    ];
+    let currentPlayerIndex = 0;      // 当前回合玩家索引 (多人模式用)
+
+    // 排行榜 (localStorage)
+    let leaderboard = [];
+
+    // 音效 (使用web audio简易模拟)
+    function playSound(type) {
+        try {
+            let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            let oscillator = audioCtx.createOscillator();
+            let gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            let now = audioCtx.currentTime;
+            if(type === 'correct') {
+                oscillator.frequency.value = 880;
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, now+0.5);
+                oscillator.start();
+                oscillator.stop(now+0.3);
+            } else if(type === 'wrong') {
+                oscillator.frequency.value = 440;
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, now+0.4);
+                oscillator.start();
+                oscillator.stop(now+0.25);
+            } else if(type === 'buy') {
+                oscillator.frequency.value = 660;
+                gainNode.gain.setValueAtTime(0.15, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, now+0.2);
+                oscillator.start();
+                oscillator.stop(now+0.15);
+            } else if(type === 'click') {
+                oscillator.frequency.value = 800;
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, now+0.1);
+                oscillator.start();
+                oscillator.stop(now+0.08);
+            }
+            audioCtx.close().catch(e=>{});
+        } catch(e) { console.log("audio blocked or error");}
+    }
+
+    // 显示提示消息
+    function showToast(msg, isError = false) {
+        let toast = document.createElement('div');
+        toast.className = 'toast-msg';
+        toast.innerText = msg;
+        toast.style.background = isError ? "#aa2e1ecc" : "#2c5f2dcc";
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 1500);
+    }
+
+    // 更新UI金币 & 多人模式刷新显示
+    function updateUI() {
+        document.getElementById('coinCount').innerText = multiMode ? currentPlayers[currentPlayerIndex].coins : currentCoins;
+        if(multiMode) {
+            let statusStr = `👥 多人对战 | 当前: ${currentPlayers[currentPlayerIndex].name} 🪙${currentPlayers[currentPlayerIndex].coins}`;
+            document.getElementById('multiStatus').innerHTML = statusStr;
+        } else {
+            document.getElementById('multiStatus').innerHTML = `👤 单人模式 | ${activePlayerName} 🪙${currentCoins}`;
+        }
+        renderLeaderboard();
+    }
+
+    // 获得金币 (带特效、跳跃、音效)
+    function earnCoins(amount) {
+        let finalAmount = (doubleActive ? amount * 2 : amount);
+        if(doubleActive && finalAmount>0) { showToast("✨双倍得分✨ +"+finalAmount+"金币"); doubleActive=false; }
+        if(multiMode) {
+            currentPlayers[currentPlayerIndex].coins += finalAmount;
+        } else {
+            currentCoins += finalAmount;
+        }
+        playSound('correct');
+        // Mario跳跃动画
+        let marioDiv = document.getElementById('marioSprite');
+        marioDiv.classList.add('jump');
+        setTimeout(() => marioDiv.classList.remove('jump'), 250);
+        // 金币爆炸特效
+        for(let i=0;i<18;i++) {
+            createCoinParticle(marioDiv);
+        }
+        updateUI();
+        saveHighScoreToLeaderboard();
+    }
+
+    // 金币粒子
+    function createCoinParticle(parentElem) {
+        const rect = parentElem.getBoundingClientRect();
+        const containerRect = document.querySelector('.mario-stage').getBoundingClientRect();
+        const startX = rect.left + rect.width/2 - containerRect.left;
+        const startY = rect.top + rect.height/2 - containerRect.top;
+        const particle = document.createElement('div');
+        particle.innerHTML = '🪙';
+        particle.classList.add('coin-particle');
+        const dx = (Math.random() - 0.5) * 150;
+        const dy = -Math.random() * 120 - 30;
+        particle.style.setProperty('--dx', dx + 'px');
+        particle.style.setProperty('--dy', dy + 'px');
+        particle.style.left = startX + 'px';
+        particle.style.top = startY + 'px';
+        particle.style.position = 'absolute';
+        document.querySelector('.mario-stage').appendChild(particle);
+        setTimeout(() => particle.remove(), 800);
+    }
+
+    // 生成随机题目
+    function generateNewQuestion() {
+        const randomIndex = Math.floor(Math.random() * QUESTION_SET.length);
+        const data = QUESTION_SET[randomIndex];
+        currentQuestionObj = data;
+        // 随机决定问 "意思" 还是 "拼音"
+        const type = Math.random() > 0.5 ? "meaning" : "pinyin";
+        let correctStr = "";
+        if(type === "meaning") {
+            correctStr = data.meaning;
+            document.getElementById('questionText').innerHTML = `📖 “${data.word}” 的意思是？`;
+        } else {
+            correctStr = data.pinyin;
+            document.getElementById('questionText').innerHTML = `🔊 “${data.word}” 的拼音是？`;
+        }
+        correctAnswerText = correctStr;
+        // 生成干扰项
+        let otherAnswers = [];
+        const candidates = QUESTION_SET.filter(q => (type==="meaning"? q.meaning:q.pinyin) !== correctStr).map(q => type==="meaning"? q.meaning:q.pinyin);
+        let shuffled = [...new Set(candidates)];
+        while(otherAnswers.length < 3 && shuffled.length) {
+            let cand = shuffled.shift();
+            if(cand !== correctStr && !otherAnswers.includes(cand)) otherAnswers.push(cand);
+        }
+        if(otherAnswers.length<3) otherAnswers = ["快乐","学校","朋友"].slice(0,3);
+        currentOptions = [correctStr, ...otherAnswers.slice(0,3)];
+        for(let i=currentOptions.length-1;i>0;i--){
+            const j=Math.floor(Math.random()*(i+1));
+            [currentOptions[i],currentOptions[j]] = [currentOptions[j],currentOptions[i]];
+        }
+        renderOptions();
+        resetTimer();
+        canAnswer = true;
+    }
+
+    function renderOptions() {
+        const container = document.getElementById('optionsContainer');
+        container.innerHTML = '';
+        currentOptions.forEach(opt => {
+            let btn = document.createElement('button');
+            btn.innerText = opt;
+            btn.className = 'option-btn';
+            btn.onclick = () => handleAnswer(opt);
+            container.appendChild(btn);
+        });
+    }
+
+    function handleAnswer(selected) {
+        if(!canAnswer) return;
+        if(selected === correctAnswerText) {
+            // 正确
+            let earned = 10;
+            earnCoins(earned);
+            showToast("✅ 正确! +"+ (doubleActive?earned*2:earned)+"金币", false);
+            nextQuestion();
+        } else {
+            playSound('wrong');
+            showToast("❌ 错误! 正确答案: "+correctAnswerText, true);
+            // 错误震动
+            let stage = document.querySelector('.mario-stage');
+            stage.style.transform = 'translateX(4px)';
+            setTimeout(()=> stage.style.transform = '', 100);
+            nextQuestion();   // 答错也进入下一题
+        }
+    }
+
+    function resetTimer() {
+        if(timerInterval) clearInterval(timerInterval);
+        timeLeft = 10;
+        updateTimerDisplay();
+        timerInterval = setInterval(() => {
+            if(!canAnswer) return;
+            if(timeLeft <= 0) {
+                clearInterval(timerInterval);
+                if(canAnswer){
+                    canAnswer = false;
+                    playSound('wrong');
+                    showToast("⏰ 超时啦！跳过题目", true);
+                    nextQuestion();
+                }
+            } else {
+                timeLeft--;
+                updateTimerDisplay();
+                if(timeLeft <= 3) document.getElementById('timerFill').classList.add('timer-danger');
+                else document.getElementById('timerFill').classList.remove('timer-danger');
+            }
+        }, 1000);
+    }
+    function updateTimerDisplay() {
+        let percent = (timeLeft / 10) * 100;
+        document.getElementById('timerFill').style.width = percent + '%';
+        document.getElementById('timerText').innerHTML = `⏱️ ${timeLeft}s`;
+    }
+
+    function nextQuestion() {
+        if(timerInterval) clearInterval(timerInterval);
+        canAnswer = false;
+        // 多人模式切换玩家
+        if(multiMode) {
+            let total = currentPlayers.length;
+            currentPlayerIndex = (currentPlayerIndex + 1) % total;
+        }
+        updateUI();
+        generateNewQuestion();
+    }
+
+    // 跳过题目道具
+    function skipQuestion() {
+        if(multiMode) {
+            if(currentPlayers[currentPlayerIndex].coins >= 10) {
+                currentPlayers[currentPlayerIndex].coins -= 10;
+                playSound('buy');
+                showToast(`🎲 使用跳过道具 -10金币`, false);
+                nextQuestion();
+                updateUI();
+            } else showToast("💰 金币不足，无法跳过!", true);
+        } else {
+            if(currentCoins >= 10) {
+                currentCoins -= 10;
+                playSound('buy');
+                showToast("⏩ 消耗10金币跳过本题", false);
+                nextQuestion();
+                updateUI();
+            } else showToast("金币不足，无法跳过", true);
+        }
+    }
+
+    // 商店系统
+    function openShop() {
+        playSound('click');
+        let modal = document.getElementById('shopModal');
+        let shopList = document.getElementById('shopItemsList');
+        shopList.innerHTML = '';
+        SHOP_ITEMS.forEach(item => {
+            let div = document.createElement('div');
+            div.className = 'shop-item';
+            div.innerHTML = `<span>${item.name} 🪙${item.price}</span><button class="buy-btn" data-id="${item.id}">购买</button>`;
+            shopList.appendChild(div);
+        });
+        document.querySelectorAll('.buy-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                let id = btn.getAttribute('data-id');
+                buyItem(id);
+                e.stopPropagation();
+            });
+        });
+        modal.style.display = 'flex';
+    }
+
+    function buyItem(itemId) {
+        let item = SHOP_ITEMS.find(i=>i.id===itemId);
+        if(!item) return;
+        let playerCoins = multiMode ? currentPlayers[currentPlayerIndex].coins : currentCoins;
+        if(playerCoins >= item.price) {
+            if(multiMode) currentPlayers[currentPlayerIndex].coins -= item.price;
+            else currentCoins -= item.price;
+            playSound('buy');
+            // 闪光特效
+            let btns = document.querySelectorAll('.buy-btn');
+            btns.forEach(b=>{ if(b.getAttribute('data-id')===itemId) b.classList.add('flash-effect'); setTimeout(()=>b.classList.remove('flash-effect'),300);});
+            // 应用效果
+            if(item.effect === 'addTime') {
+                if(timerInterval && canAnswer) { timeLeft += 5; updateTimerDisplay(); showToast("⏳ +5秒延长!",false);}
+                else showToast("当前无法加时, 下一题可用", false);
+            } else if(item.effect === 'hint') {
+                if(canAnswer && correctAnswerText) {
+                    showToast(`💡 提示: 正确答案是 ${correctAnswerText}`, false);
+                } else showToast("现在不能使用提示", false);
+            } else if(item.effect === 'doubleCoin') {
+                doubleActive = true;
+                showToast("⚡ 下题双倍金币！", false);
+            }
+            updateUI();
+            let modal = document.getElementById('shopModal');
+            if(modal.style.display==='flex') modal.style.display='none';
+        } else {
+            playSound('wrong');
+            showToast("金币不足，无法购买~", true);
+        }
+    }
+
+    // 多人模式切换
+    function toggleMultiMode() {
+        playSound('click');
+        if(!multiMode) {
+            // 从单人转移到多人: 把单人金币合并到红帽马里奥
+            let totalCoins = currentCoins;
+            currentPlayers[0].coins = totalCoins;
+            currentPlayers[1].coins = 0;
+            currentPlayers[2].coins = 0;
+            currentPlayerIndex = 0;
+            multiMode = true;
+            showToast("切换为多人对战模式！轮流答题抢金币", false);
+        } else {
+            // 切回单人: 合并当前玩家金币到马里奥
+            let sumCoins = currentPlayers.reduce((acc,p)=>acc+p.coins,0);
+            currentCoins = sumCoins;
+            multiMode = false;
+            activePlayerName = "马里奥";
+            showToast("切换为单人模式", false);
+        }
+        updateUI();
+        if(timerInterval) clearInterval(timerInterval);
+        generateNewQuestion();
+    }
+
+    // 排行榜: 存储前三 (基于单人最高分)
+    function saveHighScoreToLeaderboard() {
+        let total = multiMode ? Math.max(...currentPlayers.map(p=>p.coins)) : currentCoins;
+        let playerName = multiMode ? "多人玩家" : activePlayerName;
+        leaderboard.push({name: playerName, score: total, date: new Date().toLocaleTimeString()});
+        leaderboard.sort((a,b)=>b.score - a.score);
+        leaderboard = leaderboard.slice(0, 5);
+        localStorage.setItem('mario_coin_leaderboard', JSON.stringify(leaderboard));
+        renderLeaderboard();
+    }
+
+    function renderLeaderboard() {
+        let container = document.getElementById('leaderList');
+        if(!leaderboard.length) {
+            container.innerHTML = "✨ 暂无记录，努力答题 ✨";
+            return;
+        }
+        container.innerHTML = leaderboard.map((entry,idx)=>`${idx+1}. ${entry.name} — 🪙${entry.score} ${entry.date}`).join('<br>');
+        let best = leaderboard[0]?.score || 0;
+        document.getElementById('highScoreSpan').innerText = best;
+    }
+
+    function loadLeaderboard() {
+        let stored = localStorage.getItem('mario_coin_leaderboard');
+        if(stored) leaderboard = JSON.parse(stored);
+        renderLeaderboard();
+    }
+
+    // 初始化游戏
+    function init() {
+        loadLeaderboard();
+        currentCoins = 0;
+        multiMode = false;
+        currentPlayers = [
+            { name: "红帽马里奥", coins: 0, active: true },
+            { name: "路易吉", coins: 0, active: false },
+            { name: "碧琪公主", coins: 0, active: false }
+        ];
+        currentPlayerIndex = 0;
+        generateNewQuestion();
+        updateUI();
+        document.getElementById('shopBtn').onclick = openShop;
+        document.getElementById('closeShopBtn').onclick = () => { document.getElementById('shopModal').style.display='none'; playSound('click');};
+        document.getElementById('multiToggleBtn').onclick = toggleMultiMode;
+        document.getElementById('nextSkipBtn').onclick = skipQuestion;
+        window.onclick = (e) => { if(e.target === document.getElementById('shopModal')) document.getElementById('shopModal').style.display='none';};
+    }
+    init();
+</script>
+</body>
+</html>
+```
